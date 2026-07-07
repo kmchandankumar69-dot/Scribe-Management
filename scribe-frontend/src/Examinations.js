@@ -12,7 +12,7 @@ function Examinations() {
   });
 
   useEffect(() => {
-    fetch("http://localhost:5000/examinations")
+    fetch("https://capable-recreation-production-3e70.up.railway.app/examinations")
       .then((res) => res.json())
       .then(setExaminations)
       .catch(console.error);
@@ -23,20 +23,20 @@ function Examinations() {
   }
 
   function handleAdd() {
-    fetch("http://localhost:5000/examinations", {
+    fetch("https://capable-recreation-production-3e70.up.railway.app/examinations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     }).then(() => {
       setForm({ date_time: "", location: "", subject: "", duration: "", person_id: "", vol_id: "" });
-      fetch("http://localhost:5000/examinations")
+      fetch("https://capable-recreation-production-3e70.up.railway.app/examinations")
         .then((res) => res.json())
         .then(setExaminations);
     });
   }
 
   function handleDelete(id) {
-    fetch(`http://localhost:5000/examinations/${id}`, { method: "DELETE" }).then(() => {
+    fetch(`https://capable-recreation-production-3e70.up.railway.app/examinations/${id}`, { method: "DELETE" }).then(() => {
       setExaminations(examinations.filter((e) => e.exam_id !== id));
     });
   }

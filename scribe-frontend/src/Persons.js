@@ -9,7 +9,7 @@ function Persons() {
   });
 
   useEffect(() => {
-    fetch('http://localhost:5000/persons')
+    fetch('https://capable-recreation-production-3e70.up.railway.app/persons')
       .then(res => res.json())
       .then(data => setPersons(data))
       .catch(console.error);
@@ -20,7 +20,7 @@ function Persons() {
   }
 
   function handleAdd() {
-    fetch('http://localhost:5000/persons', {
+    fetch('https://capable-recreation-production-3e70.up.railway.app/persons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
@@ -31,14 +31,14 @@ function Persons() {
           education_level: '',
           preferred_language: '',
         });
-        return fetch('http://localhost:5000/persons');
+        return fetch('https://capable-recreation-production-3e70.up.railway.app/persons');
       })
       .then(res => res.json())
       .then(data => setPersons(data));
   }
 
   function handleDelete(id) {
-    fetch(`http://localhost:5000/persons/${id}`, { method: 'DELETE' }).then(() => {
+    fetch(`https://capable-recreation-production-3e70.up.railway.app/persons/${id}`, { method: 'DELETE' }).then(() => {
       setPersons(persons.filter((p) => p.person_id !== id));
     });
   }

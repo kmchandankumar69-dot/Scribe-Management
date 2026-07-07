@@ -15,7 +15,7 @@ function Volunteers() {
   }, []);
 
   function fetchVolunteers() {
-    fetch('http://localhost:5000/volunteers')
+    fetch('https://capable-recreation-production-3e70.up.railway.app/volunteers')
       .then(res => res.json())
       .then(data => setVolunteers(data))
       .catch(console.error);
@@ -26,7 +26,7 @@ function Volunteers() {
   }
 
   function handleAdd() {
-    fetch('http://localhost:5000/volunteers', {
+    fetch('https://capable-recreation-production-3e70.up.railway.app/volunteers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -37,7 +37,7 @@ function Volunteers() {
   }
 
   function handleDelete(vol_id) {
-    fetch(`http://localhost:5000/volunteers/${vol_id}`, { method: 'DELETE' })
+    fetch(`https://capable-recreation-production-3e70.up.railway.app/volunteers/${vol_id}`, { method: 'DELETE' })
       .then(() => fetchVolunteers());
   }
 

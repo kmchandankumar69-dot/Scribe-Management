@@ -5,7 +5,7 @@ function Coordinators() {
   const [form, setForm] = useState({ coord_name: "", contact_info: "", assigned_exam: "" });
 
   useEffect(() => {
-    fetch("http://localhost:5000/coordinators")
+    fetch("https://capable-recreation-production-3e70.up.railway.app/coordinators")
       .then((res) => res.json())
       .then(setCoordinators)
       .catch(console.error);
@@ -16,20 +16,20 @@ function Coordinators() {
   }
 
   function handleAdd() {
-    fetch("http://localhost:5000/coordinators", {
+    fetch("https://capable-recreation-production-3e70.up.railway.app/coordinators", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     }).then(() => {
       setForm({ coord_name: "", contact_info: "", assigned_exam: "" });
-      fetch("http://localhost:5000/coordinators")
+      fetch("https://capable-recreation-production-3e70.up.railway.app/coordinators")
         .then((res) => res.json())
         .then(setCoordinators);
     });
   }
 
   function handleDelete(id) {
-    fetch(`http://localhost:5000/coordinators/${id}`, { method: "DELETE" }).then(() => {
+    fetch(`https://capable-recreation-production-3e70.up.railway.app/coordinators/${id}`, { method: "DELETE" }).then(() => {
       setCoordinators(coordinators.filter((c) => c.coord_id !== id));
     });
   }

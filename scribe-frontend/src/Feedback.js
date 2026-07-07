@@ -9,7 +9,7 @@ function Feedback() {
   }, []);
 
   function fetchFeedbacks() {
-    fetch('http://localhost:5000/feedback')
+    fetch('https://capable-recreation-production-3e70.up.railway.app/feedback')
       .then(res => res.json())
       .then(data => setFeedbacks(data))
       .catch(console.error);
@@ -20,7 +20,7 @@ function Feedback() {
   }
 
   function handleAdd() {
-    fetch('http://localhost:5000/feedback', {
+    fetch('https://capable-recreation-production-3e70.up.railway.app/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -35,7 +35,7 @@ function Feedback() {
   function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this feedback?")) return;
 
-    fetch(`http://localhost:5000/feedback/${id}`, { method: 'DELETE' })
+    fetch(`https://capable-recreation-production-3e70.up.railway.app/feedback/${id}`, { method: 'DELETE' })
       .then(res => {
         if (!res.ok) throw new Error('Failed to delete');
         fetchFeedbacks();
