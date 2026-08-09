@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 
 const API_URL = 'http://localhost:5000';
 
-function Volunteers() {
+export default function Volunteers() {
   const [volunteers, setVolunteers] = useState([]);
+  const [examinations, setExaminations] = useState([]); // NEW: State for tracking assignments
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,6 +18,7 @@ function Volunteers() {
 
   useEffect(() => {
     fetchVolunteers();
+    fetchExaminations(); // NEW: Fetch assignment data on load
   }, []);
 
   function fetchVolunteers() {
@@ -25,29 +27,27 @@ function Volunteers() {
 
     fetch(`${API_URL}/volunteers`)
       .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`Server returned ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
         return res.json();
       })
-      .then((data) => {
-        setVolunteers(Array.isArray(data) ? data : []);
-      })
+      .then((data) => setVolunteers(Array.isArray(data) ? data : []))
       .catch((err) => {
         console.error('Failed to fetch volunteers:', err);
-        setError(
-          'Could not connect to the backend. Make sure the backend is running on port 5000.'
-        );
+        setError('Could not connect to the backend. Make sure the backend is running on port 5000.');
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
+  }
+
+  // NEW: Fetch examinations to calculate assigned status
+  function fetchExaminations() {
+    fetch(`${API_URL}/examinations`)
+      .then((res) => res.json())
+      .then((data) => setExaminations(Array.isArray(data) ? data : []))
+      .catch((err) => console.error("Failed to fetch examinations:", err));
   }
 
   function handleChange(e) {
     const { name, value } = e.target;
-
     setForm((previousForm) => ({
       ...previousForm,
       [name]: value
@@ -56,10 +56,8 @@ function Volunteers() {
 
   function handleAdd(e) {
     e.preventDefault();
-
     setError('');
 
-    // Basic validation
     if (
       !form.vol_name.trim() ||
       !form.vol_contact.trim() ||
@@ -83,20 +81,12 @@ function Volunteers() {
       .then(async (res) => {
         if (!res.ok) {
           let message = `Server returned ${res.status}`;
-
           try {
             const data = await res.json();
-
-            if (data && data.error) {
-              message = data.error;
-            }
-          } catch {
-            // Keep the default error message
-          }
-
+            if (data && data.error) message = data.error;
+          } catch {}
           throw new Error(message);
         }
-
         return res.json().catch(() => ({}));
       })
       .then(() => {
@@ -107,7 +97,6 @@ function Volunteers() {
           language: '',
           education: ''
         });
-
         fetchVolunteers();
       })
       .catch((err) => {
@@ -118,9 +107,7 @@ function Volunteers() {
   }
 
   function handleDelete(vol_id) {
-    if (!window.confirm('Are you sure you want to delete this volunteer?')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to delete this volunteer?')) return;
 
     setError('');
     setLoading(true);
@@ -129,15 +116,10 @@ function Volunteers() {
       method: 'DELETE'
     })
       .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`Server returned ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
         return res.json().catch(() => ({}));
       })
-      .then(() => {
-        fetchVolunteers();
-      })
+      .then(() => fetchVolunteers())
       .catch((err) => {
         console.error('Failed to delete volunteer:', err);
         setError(`Could not delete volunteer: ${err.message}`);
@@ -146,225 +128,159 @@ function Volunteers() {
   }
 
   return (
-    <div style={containerStyle}>
-      <h2 style={headerStyle}>Volunteers</h2>
+    <div className="space-y-6">
+      
+      {/* Top Summary Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Volunteers</div>
+          <div className="text-3xl font-extrabold text-slate-800 mt-1">{volunteers.length}</div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Assigned Scribes</div>
+          <div className="text-3xl font-extrabold text-blue-600 mt-1">
+            {volunteers.filter(v => examinations.some(e => String(e.vol_id) === String(v.vol_id))).length}
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Languages Covered</div>
+          <div className="text-3xl font-extrabold text-indigo-600 mt-1">
+            {new Set(volunteers.map(v => v.language)).size}
+          </div>
+        </div>
+      </div>
 
+      {/* Error Alert */}
       {error && (
-        <div style={errorStyle}>
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm font-medium">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleAdd} style={formStyle}>
-        <input
-          type="text"
-          name="vol_name"
-          placeholder="Volunteer Name"
-          value={form.vol_name}
-          onChange={handleChange}
-          style={inputStyle}
-        />
+      {/* Form Card */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Register New Volunteer</h3>
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+              type="text"
+              name="vol_name"
+              placeholder="Volunteer Name"
+              value={form.vol_name}
+              onChange={handleChange}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <input
+              type="text"
+              name="vol_contact"
+              placeholder="Contact Number / Email"
+              value={form.vol_contact}
+              onChange={handleChange}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <input
+              type="text"
+              name="availability"
+              placeholder="Pref. Timing (e.g. Weekends)"
+              value={form.availability}
+              onChange={handleChange}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <input
+              type="text"
+              name="language"
+              placeholder="Language (e.g. Kannada)"
+              value={form.language}
+              onChange={handleChange}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <input
+              type="text"
+              name="education"
+              placeholder="Education Qualification"
+              value={form.education}
+              onChange={handleChange}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-2.5 px-4 rounded-lg shadow-sm transition duration-150 disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Add Volunteer'}
+            </button>
+          </div>
+        </form>
+      </div>
 
-        <input
-          type="text"
-          name="vol_contact"
-          placeholder="Contact Info"
-          value={form.vol_contact}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-
-        <input
-          type="text"
-          name="availability"
-          placeholder="Availability"
-          value={form.availability}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-
-        <input
-          type="text"
-          name="language"
-          placeholder="Language"
-          value={form.language}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-
-        <input
-          type="text"
-          name="education"
-          placeholder="Education"
-          value={form.education}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-
-        <button
-          type="submit"
-          style={buttonStyle}
-          disabled={loading}
-        >
-          {loading ? 'Please wait...' : 'Add Volunteer'}
-        </button>
-      </form>
-
-      <div style={listContainerStyle}>
-        <h3 style={listHeaderStyle}>Volunteer List</h3>
+      {/* Directory Table Card */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+          <h3 className="font-bold text-slate-800">Volunteer Roster</h3>
+          <span className="text-xs text-slate-500 font-medium">{volunteers.length} Entries</span>
+        </div>
 
         {loading && volunteers.length === 0 ? (
-          <p style={emptyStyle}>Loading volunteers...</p>
+          <div className="p-8 text-center text-slate-500 text-sm">Loading volunteer roster...</div>
         ) : volunteers.length === 0 ? (
-          <p style={emptyStyle}>No volunteers found.</p>
+          <div className="p-8 text-center text-slate-500 text-sm">No volunteers registered yet.</div>
         ) : (
-          <ul style={listStyle}>
-            {volunteers.map((v) => (
-              <li
-                key={v.vol_id}
-                style={listItemStyle}
-              >
-                <div style={volunteerInfoStyle}>
-                  <strong>
-                    ID: {v.vol_id} — {v.vol_name}
-                  </strong>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="bg-slate-100/75 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+                  <th className="py-3 px-6">ID</th>
+                  <th className="py-3 px-6">Name</th>
+                  <th className="py-3 px-6">Contact</th>
+                  <th className="py-3 px-6">Language</th>
+                  <th className="py-3 px-6">Status</th>
+                  <th className="py-3 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {volunteers.map((v) => {
+                  // NEW: Calculate if volunteer exists in exams table
+                  const isAssigned = examinations.some(e => String(e.vol_id) === String(v.vol_id));
 
-                  <span>
-                    Contact: {v.vol_contact}
-                  </span>
-
-                  <span>
-                    Availability: {v.availability}
-                  </span>
-
-                  <span>
-                    Language: {v.language}
-                  </span>
-
-                  <span>
-                    Education: {v.education}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleDelete(v.vol_id)}
-                  style={deleteButtonStyle}
-                  disabled={loading}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
+                  return (
+                    <tr key={v.vol_id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-4 px-6 font-medium text-slate-400">#{v.vol_id}</td>
+                      <td className="py-4 px-6 font-semibold text-slate-800">
+                        {v.vol_name}
+                        <div className="text-xs text-slate-400 font-normal mt-0.5">{v.education}</div>
+                      </td>
+                      <td className="py-4 px-6 text-slate-600">{v.vol_contact}</td>
+                      <td className="py-4 px-6 text-slate-600">{v.language}</td>
+                      <td className="py-4 px-6">
+                        {isAssigned ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Assigned
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                            Available
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(v.vol_id)}
+                          disabled={loading}
+                          className="text-xs font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-md transition"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
     </div>
   );
 }
-
-const containerStyle = {
-  padding: 20,
-  backgroundColor: '#fff',
-  borderRadius: 12,
-  boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-  maxWidth: 1000,
-  margin: '20px auto'
-};
-
-const headerStyle = {
-  color: '#4a90e2',
-  textAlign: 'center',
-  marginBottom: 20
-};
-
-const formStyle = {
-  display: 'flex',
-  gap: 12,
-  marginBottom: 30,
-  flexWrap: 'wrap',
-  justifyContent: 'center'
-};
-
-const inputStyle = {
-  padding: 10,
-  borderRadius: 8,
-  border: '1px solid #ccc',
-  minWidth: 150,
-  fontSize: 14,
-  outline: 'none'
-};
-
-const buttonStyle = {
-  backgroundColor: '#4a90e2',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 8,
-  padding: '10px 20px',
-  cursor: 'pointer',
-  fontWeight: '600',
-  boxShadow: '0 4px 12px rgba(74, 144, 226, 0.4)'
-};
-
-const listContainerStyle = {
-  marginTop: 20
-};
-
-const listHeaderStyle = {
-  color: '#4a90e2',
-  textAlign: 'center',
-  marginBottom: 15
-};
-
-const listStyle = {
-  listStyleType: 'none',
-  paddingLeft: 0,
-  margin: 0
-};
-
-const listItemStyle = {
-  backgroundColor: '#f0f5ff',
-  marginBottom: 12,
-  padding: 15,
-  borderRadius: 8,
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: 15,
-  fontSize: 14
-};
-
-const volunteerInfoStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 5,
-  flex: 1
-};
-
-const deleteButtonStyle = {
-  backgroundColor: '#e94e4e',
-  border: 'none',
-  color: 'white',
-  borderRadius: 8,
-  padding: '6px 14px',
-  cursor: 'pointer',
-  fontWeight: '700'
-};
-
-const errorStyle = {
-  backgroundColor: '#ffe6e6',
-  color: '#c62828',
-  border: '1px solid #ef9a9a',
-  borderRadius: 8,
-  padding: 12,
-  marginBottom: 20,
-  textAlign: 'center'
-};
-
-const emptyStyle = {
-  textAlign: 'center',
-  color: '#777',
-  padding: 20
-};
-
-export default Volunteers;
